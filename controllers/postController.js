@@ -2,6 +2,15 @@ const Post = require('../models/Post');
 const { sendEmail } = require('../utils/mailer');
 const Subscriber = require('../models/Subscriber');
 
+// Slug-to-category mapping
+const categoryMap = {
+  'ai-tools': 'AI Tools',
+  'digital-marketing': 'Digital Marketing',
+  'blogging': 'Blogging',
+  'seo': 'SEO',
+  'online-business': 'Online Business',
+};
+
 exports.createPost = async (req, res) => {
   const { title, content, imageUrl, category } = req.body;
   try {
@@ -23,7 +32,16 @@ exports.createPost = async (req, res) => {
 
 exports.getPosts = async (req, res) => {
   try {
-    const posts = await Post.find();
+    const { category } = req.query;
+    let queryCategory = category;
+    
+    // Convert slug to proper category name if slug is provided
+    if (category && categoryMap[category]) {
+      queryCategory = categoryMap[category];
+    }
+
+    const query = queryCategory ? { category: queryCategory } : {};
+    const posts = await Post.find(query).sort({ createdAt: -1 }); // Latest posts first
     res.json(posts);
   } catch (err) {
     res.status(500).json({ message: err.message });
